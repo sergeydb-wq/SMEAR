@@ -1,0 +1,1080 @@
+--// Combat + ESP + Friend List
+--// Z = Kill Aura
+--// X = ESP
+--// F = Friend List
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+
+--------------------------------------------------
+-- CONFIG
+--------------------------------------------------
+
+local config = {
+    combatEnabled = true,
+    espEnabled = true,
+
+    range = 25,
+    delay = 0.25,
+    targetCooldown = 0.35,
+
+    standardWeapons = {
+        "Axe",
+        "Diamond Sword",
+        "DiamondSword"
+    }
+}
+
+--------------------------------------------------
+-- FRIENDS
+--------------------------------------------------
+
+local Friends = {}
+
+--------------------------------------------------
+-- REMOTE
+--------------------------------------------------
+
+local EventsFolder = ReplicatedStorage:WaitForChild("Events")
+local CombatEvent = EventsFolder:WaitForChild("CombatEvent")
+
+--------------------------------------------------
+-- GUI PARENT
+--------------------------------------------------
+
+local function getGuiParent()
+    if type(gethui) == "function" then
+        local ok, result = pcall(gethui)
+
+        if ok and result then
+            return result
+        end
+    end
+
+    local CoreGui = game:GetService("CoreGui")
+
+    if CoreGui then
+        return CoreGui
+    end
+
+    return LocalPlayer:WaitForChild("PlayerGui")
+end
+
+local guiParent = getGuiParent()
+
+--------------------------------------------------
+-- REMOVE OLD GUI
+--------------------------------------------------
+
+pcall(function()
+    local old = guiParent:FindFirstChild("CombatESP_GUI")
+
+    if old then
+        old:Destroy()
+    end
+end)
+
+--------------------------------------------------
+-- SCREEN GUI
+--------------------------------------------------
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CombatESP_GUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+ScreenGui.Parent = guiParent
+
+--------------------------------------------------
+-- MAIN FRAME
+--------------------------------------------------
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 250, 0, 175)
+Main.Position = UDim2.new(0.5, -125, 0.12, 0)
+Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(65, 65, 65)
+MainStroke.Thickness = 1
+MainStroke.Parent = Main
+
+--------------------------------------------------
+-- TITLE
+--------------------------------------------------
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -20, 0, 30)
+Title.Position = UDim2.new(0, 10, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "Combat / ESP"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Main
+
+--------------------------------------------------
+-- BUTTON CREATOR
+--------------------------------------------------
+
+local function createButton(y)
+    local Button = Instance.new("TextButton")
+
+    Button.Size = UDim2.new(1, -20, 0, 35)
+    Button.Position = UDim2.new(0, 10, 0, y)
+    Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Button.BorderSizePixel = 0
+
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.Font = Enum.Font.GothamBold
+    Button.TextSize = 14
+
+    Button.Parent = Main
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = Button
+
+    return Button
+end
+
+local CombatButton = createButton(40)
+local ESPButton = createButton(80)
+local FriendButton = createButton(120)
+
+--------------------------------------------------
+-- UPDATE MAIN GUI
+--------------------------------------------------
+
+local function updateMainGUI()
+
+    if config.combatEnabled then
+        CombatButton.Text = "Kill Aura: ON [Z]"
+        CombatButton.BackgroundColor3 = Color3.fromRGB(45, 170, 75)
+    else
+        CombatButton.Text = "Kill Aura: OFF [Z]"
+        CombatButton.BackgroundColor3 = Color3.fromRGB(170, 45, 45)
+    end
+
+    if config.espEnabled then
+        ESPButton.Text = "ESP: ON [X]"
+        ESPButton.BackgroundColor3 = Color3.fromRGB(45, 120, 200)
+    else
+        ESPButton.Text = "ESP: OFF [X]"
+        ESPButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end
+
+    FriendButton.Text = "Friend List [F]"
+end
+
+updateMainGUI()
+
+--------------------------------------------------
+-- FRIEND WINDOW
+--------------------------------------------------
+
+local FriendFrame = Instance.new("Frame")
+FriendFrame.Name = "FriendList"
+FriendFrame.Size = UDim2.new(0, 280, 0, 350)
+FriendFrame.Position = UDim2.new(0.5, 140, 0.12, 0)
+FriendFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+FriendFrame.BorderSizePixel = 0
+FriendFrame.Visible = true
+FriendFrame.Active = true
+FriendFrame.Parent = ScreenGui
+
+local FriendCorner = Instance.new("UICorner")
+FriendCorner.CornerRadius = UDim.new(0, 12)
+FriendCorner.Parent = FriendFrame
+
+local FriendStroke = Instance.new("UIStroke")
+FriendStroke.Color = Color3.fromRGB(65, 65, 65)
+FriendStroke.Thickness = 1
+FriendStroke.Parent = FriendFrame
+
+--------------------------------------------------
+-- FRIEND TITLE
+--------------------------------------------------
+
+local FriendTitle = Instance.new("TextLabel")
+FriendTitle.Size = UDim2.new(1, -20, 0, 35)
+FriendTitle.Position = UDim2.new(0, 10, 0, 5)
+FriendTitle.BackgroundTransparency = 1
+FriendTitle.Text = "Friend List"
+FriendTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+FriendTitle.Font = Enum.Font.GothamBold
+FriendTitle.TextSize = 18
+FriendTitle.TextXAlignment = Enum.TextXAlignment.Left
+FriendTitle.Parent = FriendFrame
+
+--------------------------------------------------
+-- INFO
+--------------------------------------------------
+
+local FriendInfo = Instance.new("TextLabel")
+FriendInfo.Size = UDim2.new(1, -20, 0, 20)
+FriendInfo.Position = UDim2.new(0, 10, 0, 37)
+FriendInfo.BackgroundTransparency = 1
+FriendInfo.Text = "Green = protected"
+FriendInfo.TextColor3 = Color3.fromRGB(120, 220, 120)
+FriendInfo.Font = Enum.Font.Gotham
+FriendInfo.TextSize = 12
+FriendInfo.TextXAlignment = Enum.TextXAlignment.Left
+FriendInfo.Parent = FriendFrame
+
+--------------------------------------------------
+-- PLAYER SCROLL
+--------------------------------------------------
+
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.Size = UDim2.new(1, -20, 0, 250)
+PlayerList.Position = UDim2.new(0, 10, 0, 62)
+
+PlayerList.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+PlayerList.BorderSizePixel = 0
+
+PlayerList.ScrollBarThickness = 5
+PlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+PlayerList.Parent = FriendFrame
+
+local ListCorner = Instance.new("UICorner")
+ListCorner.CornerRadius = UDim.new(0, 8)
+ListCorner.Parent = PlayerList
+
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 4)
+UIList.SortOrder = Enum.SortOrder.Name
+UIList.Parent = PlayerList
+
+UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    PlayerList.CanvasSize = UDim2.new(
+        0,
+        0,
+        0,
+        UIList.AbsoluteContentSize.Y + 8
+    )
+end)
+
+--------------------------------------------------
+-- REFRESH BUTTON
+--------------------------------------------------
+
+local RefreshButton = Instance.new("TextButton")
+RefreshButton.Size = UDim2.new(1, -20, 0, 30)
+RefreshButton.Position = UDim2.new(0, 10, 0, 318)
+
+RefreshButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+RefreshButton.BorderSizePixel = 0
+
+RefreshButton.Text = "Refresh Players"
+RefreshButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+RefreshButton.Font = Enum.Font.GothamBold
+RefreshButton.TextSize = 13
+
+RefreshButton.Parent = FriendFrame
+
+local RefreshCorner = Instance.new("UICorner")
+RefreshCorner.CornerRadius = UDim.new(0, 8)
+RefreshCorner.Parent = RefreshButton
+
+--------------------------------------------------
+-- FRIEND CHECK BUTTON
+--------------------------------------------------
+
+local function isFriend(player)
+    return Friends[player.UserId] == true
+end
+
+local function toggleFriend(player)
+
+    if isFriend(player) then
+        Friends[player.UserId] = nil
+    else
+        Friends[player.UserId] = true
+    end
+end
+
+--------------------------------------------------
+-- CREATE FRIEND ENTRY
+--------------------------------------------------
+
+local function createFriendEntry(player)
+
+    if player == LocalPlayer then
+        return
+    end
+
+    local Row = Instance.new("Frame")
+
+    Row.Size = UDim2.new(1, -10, 0, 40)
+    Row.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
+    Row.BorderSizePixel = 0
+    Row.Parent = PlayerList
+
+    local RowCorner = Instance.new("UICorner")
+    RowCorner.CornerRadius = UDim.new(0, 7)
+    RowCorner.Parent = Row
+
+    local NameLabel = Instance.new("TextLabel")
+
+    NameLabel.Size = UDim2.new(1, -65, 1, 0)
+    NameLabel.Position = UDim2.new(0, 10, 0, 0)
+
+    NameLabel.BackgroundTransparency = 1
+    NameLabel.Text = player.DisplayName .. "  @" .. player.Name
+
+    NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NameLabel.Font = Enum.Font.Gotham
+    NameLabel.TextSize = 12
+
+    NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    NameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+
+    NameLabel.Parent = Row
+
+    local Check = Instance.new("TextButton")
+
+    Check.Size = UDim2.new(0, 45, 0, 28)
+    Check.Position = UDim2.new(1, -53, 0.5, -14)
+
+    Check.BorderSizePixel = 0
+    Check.Font = Enum.Font.GothamBold
+    Check.TextSize = 13
+    Check.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    Check.Parent = Row
+
+    local CheckCorner = Instance.new("UICorner")
+    CheckCorner.CornerRadius = UDim.new(0, 6)
+    CheckCorner.Parent = Check
+
+    local function updateCheck()
+
+        if isFriend(player) then
+            Check.Text = "ON"
+            Check.BackgroundColor3 = Color3.fromRGB(45, 170, 75)
+        else
+            Check.Text = "OFF"
+            Check.BackgroundColor3 = Color3.fromRGB(170, 45, 45)
+        end
+    end
+
+    updateCheck()
+
+    Check.MouseButton1Click:Connect(function()
+
+        toggleFriend(player)
+
+        updateCheck()
+    end)
+end
+
+--------------------------------------------------
+-- REFRESH FRIEND LIST
+--------------------------------------------------
+
+local function refreshFriendList()
+
+    for _, child in ipairs(PlayerList:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+
+    for _, player in ipairs(Players:GetPlayers()) do
+
+        if player ~= LocalPlayer then
+            createFriendEntry(player)
+        end
+    end
+end
+
+RefreshButton.MouseButton1Click:Connect(refreshFriendList)
+
+refreshFriendList()
+
+--------------------------------------------------
+-- FRIEND WINDOW TOGGLE
+--------------------------------------------------
+
+local function toggleFriendWindow()
+    FriendFrame.Visible = not FriendFrame.Visible
+end
+
+FriendButton.MouseButton1Click:Connect(toggleFriendWindow)
+
+--------------------------------------------------
+-- BINDS
+--------------------------------------------------
+
+UserInputService.InputBegan:Connect(function(input, processed)
+
+    if processed then
+        return
+    end
+
+    if input.KeyCode == Enum.KeyCode.Z then
+
+        config.combatEnabled =
+            not config.combatEnabled
+
+        updateMainGUI()
+
+    elseif input.KeyCode == Enum.KeyCode.X then
+
+        config.espEnabled =
+            not config.espEnabled
+
+        updateMainGUI()
+
+    elseif input.KeyCode == Enum.KeyCode.F then
+
+        toggleFriendWindow()
+    end
+end)
+
+--------------------------------------------------
+-- DRAG MAIN GUI
+--------------------------------------------------
+
+local draggingMain = false
+local dragStartMain
+local startPosMain
+
+Main.InputBegan:Connect(function(input)
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+        draggingMain = true
+        dragStartMain = input.Position
+        startPosMain = Main.Position
+
+        input.Changed:Connect(function()
+
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingMain = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+
+    if not draggingMain then
+        return
+    end
+
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+
+        local delta =
+            input.Position - dragStartMain
+
+        Main.Position = UDim2.new(
+            startPosMain.X.Scale,
+            startPosMain.X.Offset + delta.X,
+            startPosMain.Y.Scale,
+            startPosMain.Y.Offset + delta.Y
+        )
+    end
+end)
+
+--------------------------------------------------
+-- DRAG FRIEND LIST
+--------------------------------------------------
+
+local draggingFriend = false
+local dragStartFriend
+local startPosFriend
+
+FriendFrame.InputBegan:Connect(function(input)
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+        draggingFriend = true
+        dragStartFriend = input.Position
+        startPosFriend = FriendFrame.Position
+
+        input.Changed:Connect(function()
+
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingFriend = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+
+    if not draggingFriend then
+        return
+    end
+
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+
+        local delta =
+            input.Position - dragStartFriend
+
+        FriendFrame.Position = UDim2.new(
+            startPosFriend.X.Scale,
+            startPosFriend.X.Offset + delta.X,
+            startPosFriend.Y.Scale,
+            startPosFriend.Y.Offset + delta.Y
+        )
+    end
+end)
+
+--------------------------------------------------
+-- ESP
+--------------------------------------------------
+
+local ESPFolder = Instance.new("Folder")
+ESPFolder.Name = "ESP"
+ESPFolder.Parent = ScreenGui
+
+local ESPObjects = {}
+
+--------------------------------------------------
+-- REMOVE ESP
+--------------------------------------------------
+
+local function removeESP(player)
+
+    local data = ESPObjects[player]
+
+    if not data then
+        return
+    end
+
+    for _, object in pairs(data) do
+
+        pcall(function()
+            object:Destroy()
+        end)
+    end
+
+    ESPObjects[player] = nil
+end
+
+--------------------------------------------------
+-- CREATE ESP
+--------------------------------------------------
+
+local function createESP(player)
+
+    if player == LocalPlayer then
+        return
+    end
+
+    removeESP(player)
+
+    if not config.espEnabled then
+        return
+    end
+
+    local character = player.Character
+
+    if not character then
+        return
+    end
+
+    local humanoid =
+        character:FindFirstChildOfClass("Humanoid")
+
+    if not humanoid then
+        return
+    end
+
+    --------------------------------------------------
+    -- HIGHLIGHT
+    --------------------------------------------------
+
+    local highlight = Instance.new("Highlight")
+
+    highlight.Name = "PlayerESP"
+    highlight.Adornee = character
+
+    highlight.DepthMode =
+        Enum.HighlightDepthMode.AlwaysOnTop
+
+    highlight.FillTransparency = 0.55
+    highlight.OutlineTransparency = 0
+
+    --------------------------------------------------
+    -- GREEN FRIEND / RED ENEMY
+    --------------------------------------------------
+
+    if isFriend(player) then
+
+        highlight.FillColor =
+            Color3.fromRGB(50, 220, 80)
+
+        highlight.OutlineColor =
+            Color3.fromRGB(120, 255, 130)
+
+    else
+
+        highlight.FillColor =
+            Color3.fromRGB(255, 50, 50)
+
+        highlight.OutlineColor =
+            Color3.fromRGB(255, 120, 120)
+    end
+
+    highlight.Parent = ESPFolder
+
+    --------------------------------------------------
+    -- HP BILLBOARD
+    --------------------------------------------------
+
+    local root =
+        character:FindFirstChild("HumanoidRootPart")
+
+    if not root then
+        return
+    end
+
+    local Billboard =
+        Instance.new("BillboardGui")
+
+    Billboard.Name = "HealthESP"
+    Billboard.Adornee = root
+
+    Billboard.Size =
+        UDim2.new(0, 180, 0, 40)
+
+    Billboard.StudsOffset =
+        Vector3.new(0, 3.5, 0)
+
+    Billboard.AlwaysOnTop = true
+    Billboard.MaxDistance = 1000
+
+    Billboard.Parent = ESPFolder
+
+    local HPText =
+        Instance.new("TextLabel")
+
+    HPText.Size =
+        UDim2.new(1, 0, 1, 0)
+
+    HPText.BackgroundTransparency = 1
+
+    HPText.Font =
+        Enum.Font.GothamBold
+
+    HPText.TextSize = 15
+
+    HPText.TextStrokeTransparency = 0
+
+    HPText.Parent = Billboard
+
+    local function updateHP()
+
+        if not humanoid.Parent then
+            return
+        end
+
+        local hp =
+            math.max(0, math.floor(humanoid.Health))
+
+        local maxHP =
+            math.max(1, math.floor(humanoid.MaxHealth))
+
+        HPText.Text =
+            string.format(
+                "%s  |  HP: %d/%d",
+                player.DisplayName,
+                hp,
+                maxHP
+            )
+
+        if isFriend(player) then
+            HPText.TextColor3 =
+                Color3.fromRGB(80, 255, 100)
+        else
+            HPText.TextColor3 =
+                Color3.fromRGB(255, 80, 80)
+        end
+    end
+
+    updateHP()
+
+    local healthConnection =
+        humanoid.HealthChanged:Connect(updateHP)
+
+    ESPObjects[player] = {
+        Highlight = highlight,
+        Billboard = Billboard,
+        HealthConnection = healthConnection
+    }
+end
+
+--------------------------------------------------
+-- UPDATE ALL ESP
+--------------------------------------------------
+
+local function updateAllESP()
+
+    for _, player in ipairs(Players:GetPlayers()) do
+
+        if player ~= LocalPlayer then
+
+            if config.espEnabled then
+                createESP(player)
+            else
+                removeESP(player)
+            end
+        end
+    end
+end
+
+--------------------------------------------------
+-- PLAYER EVENTS
+--------------------------------------------------
+
+Players.PlayerAdded:Connect(function(player)
+
+    player.CharacterAdded:Connect(function()
+
+        task.wait(0.5)
+
+        refreshFriendList()
+
+        createESP(player)
+    end)
+
+    refreshFriendList()
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+
+    removeESP(player)
+
+    Friends[player.UserId] = nil
+
+    refreshFriendList()
+end)
+
+for _, player in ipairs(Players:GetPlayers()) do
+
+    if player ~= LocalPlayer then
+
+        player.CharacterAdded:Connect(function()
+
+            task.wait(0.5)
+
+            createESP(player)
+        end)
+
+        if player.Character then
+            createESP(player)
+        end
+    end
+end
+
+--------------------------------------------------
+-- ESP LOOP
+--------------------------------------------------
+
+task.spawn(function()
+
+    while task.wait(0.5) do
+
+        if config.espEnabled then
+            updateAllESP()
+        else
+
+            for player in pairs(ESPObjects) do
+                removeESP(player)
+            end
+        end
+    end
+end)
+
+--------------------------------------------------
+-- WEAPON
+--------------------------------------------------
+
+local function getEquippedWeapon()
+
+    local char = LocalPlayer.Character
+
+    if not char then
+        return nil, nil
+    end
+
+    if char:FindFirstChild("Mace") then
+        return "Mace", "Mace"
+    end
+
+    for _, name in ipairs(config.standardWeapons) do
+
+        if char:FindFirstChild(name) then
+            return name, "Standard"
+        end
+    end
+
+    return nil, nil
+end
+
+--------------------------------------------------
+-- TARGET SEARCH
+--------------------------------------------------
+
+local function getTargets()
+
+    local targets = {}
+
+    local char = LocalPlayer.Character
+    local root =
+        char and char:FindFirstChild("HumanoidRootPart")
+
+    if not root then
+        return targets
+    end
+
+    for _, obj in ipairs(Workspace:GetChildren()) do
+
+        if obj:IsA("Model") and obj ~= char then
+
+            local humanoid =
+                obj:FindFirstChild("Humanoid")
+
+            local hitbox =
+                obj:FindFirstChild("PlayerHitbox")
+
+            if humanoid and hitbox then
+
+                if humanoid.Health > 0 then
+
+                    local distance =
+                        (root.Position - hitbox.Position).Magnitude
+
+                    if distance <= config.range then
+
+                        local player =
+                            Players:GetPlayerFromCharacter(obj)
+
+                        -- FRIENDS ARE ALWAYS IGNORED
+                        if not player
+                            or not Friends[player.UserId] then
+
+                            table.insert(targets, {
+                                Model = obj,
+                                Player = player,
+                                Humanoid = humanoid,
+                                Hitbox = hitbox,
+                                Distance = distance
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    table.sort(targets, function(a, b)
+        return a.Distance < b.Distance
+    end)
+
+    return targets
+end
+
+--------------------------------------------------
+-- ATTACK COOLDOWN
+--------------------------------------------------
+
+local lastAttack = {}
+
+local function canAttack(target)
+
+    local now = os.clock()
+    local previous = lastAttack[target]
+
+    if not previous
+        or now - previous >= config.targetCooldown then
+
+        lastAttack[target] = now
+
+        return true
+    end
+
+    return false
+end
+
+--------------------------------------------------
+-- ATTACK
+--------------------------------------------------
+
+local attemptId = 0
+
+local function attackTarget(
+    target,
+    weaponName,
+    weaponType
+)
+
+    if not target then
+        return
+    end
+
+    if target.Player
+        and Friends[target.Player.UserId] then
+        return
+    end
+
+    if not target.Humanoid
+        or not target.Hitbox then
+        return
+    end
+
+    if target.Humanoid.Health <= 0 then
+        return
+    end
+
+    if not canAttack(target.Model) then
+        return
+    end
+
+    local char =
+        LocalPlayer.Character
+
+    if not char then
+        return
+    end
+
+    local root =
+        char:FindFirstChild("HumanoidRootPart")
+
+    if not root then
+        return
+    end
+
+    pcall(function()
+
+        if weaponType == "Mace" then
+
+            attemptId =
+                (attemptId + 1) % 10000
+
+            local originPos =
+                root.Position +
+                Vector3.new(0, 15, 0)
+
+            local targetPos =
+                target.Hitbox.Position
+
+            local difference =
+                targetPos - originPos
+
+            if difference.Magnitude <= 0 then
+                return
+            end
+
+            local aimDir =
+                difference.Unit
+
+            CombatEvent:FireServer(
+                target.Humanoid,
+                target.Hitbox,
+                1,
+                "Mace",
+                {
+                    SmashMissTipPosition = targetPos,
+                    SmashMissRayOrigin = originPos,
+                    FallSpeed = 600,
+                    AimDirection = aimDir,
+                    ClientMaceSmashHitPosition = targetPos,
+                    SourceCharacter = char,
+                    FallDistance = 800,
+                    SmashAttemptId = attemptId,
+                    ClientMaceSmashHurtbox = true
+                }
+            )
+
+        elseif weaponType == "Standard" then
+
+            CombatEvent:FireServer(
+                target.Humanoid,
+                target.Hitbox,
+                1,
+                weaponName,
+                {
+                    SourceCharacter = char,
+                    IsFalling = true
+                }
+            )
+        end
+    end)
+end
+
+--------------------------------------------------
+-- COMBAT LOOP
+--------------------------------------------------
+
+task.spawn(function()
+
+    while task.wait(config.delay) do
+
+        if not config.combatEnabled then
+            continue
+        end
+
+        local weaponName, weaponType =
+            getEquippedWeapon()
+
+        if not weaponName then
+            continue
+        end
+
+        local targets =
+            getTargets()
+
+        local target =
+            targets[1]
+
+        if target then
+
+            attackTarget(
+                target,
+                weaponName,
+                weaponType
+            )
+        end
+    end
+end)
+
+--------------------------------------------------
+-- CHARACTER RESPAWN
+--------------------------------------------------
+
+LocalPlayer.CharacterAdded:Connect(function()
+
+    task.wait(1)
+
+    updateMainGUI()
+    updateAllESP()
+end)
+
+--------------------------------------------------
+-- START
+--------------------------------------------------
+
+print("==============================")
+print("Combat + ESP loaded")
+print("Z = Kill Aura")
+print("X = ESP")
+print("F = Friend List")
+print("==============================")
