@@ -1,7 +1,5 @@
---// Combat + ESP + Friend List
---// Z = Kill Aura
---// X = ESP
---// F = Friend List
+--// Combat + ESP + Friend List + Custom Keybinds
+--// Бинды можно менять прямо через GUI
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,6 +24,12 @@ local config = {
         "Axe",
         "Diamond Sword",
         "DiamondSword"
+    },
+
+    binds = {
+        Combat = Enum.KeyCode.Z,
+        ESP = Enum.KeyCode.X,
+        Friends = Enum.KeyCode.F
     }
 }
 
@@ -47,6 +51,7 @@ local CombatEvent = EventsFolder:WaitForChild("CombatEvent")
 --------------------------------------------------
 
 local function getGuiParent()
+
     if type(gethui) == "function" then
         local ok, result = pcall(gethui)
 
@@ -90,11 +95,11 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 ScreenGui.Parent = guiParent
 
 --------------------------------------------------
--- MAIN FRAME
+-- MAIN WINDOW
 --------------------------------------------------
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 250, 0, 175)
+Main.Size = UDim2.new(0, 250, 0, 215)
 Main.Position = UDim2.new(0.5, -125, 0.12, 0)
 Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 Main.BorderSizePixel = 0
@@ -130,10 +135,12 @@ Title.Parent = Main
 --------------------------------------------------
 
 local function createButton(y)
+
     local Button = Instance.new("TextButton")
 
     Button.Size = UDim2.new(1, -20, 0, 35)
     Button.Position = UDim2.new(0, 10, 0, y)
+
     Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     Button.BorderSizePixel = 0
 
@@ -153,6 +160,134 @@ end
 local CombatButton = createButton(40)
 local ESPButton = createButton(80)
 local FriendButton = createButton(120)
+local KeybindButton = createButton(160)
+
+--------------------------------------------------
+-- KEYBINDS WINDOW
+--------------------------------------------------
+
+local KeybindFrame = Instance.new("Frame")
+KeybindFrame.Name = "Keybinds"
+KeybindFrame.Size = UDim2.new(0, 280, 0, 250)
+KeybindFrame.Position = UDim2.new(0.5, 140, 0.12, 0)
+
+KeybindFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+KeybindFrame.BorderSizePixel = 0
+KeybindFrame.Active = true
+KeybindFrame.Visible = false
+
+KeybindFrame.Parent = ScreenGui
+
+local KeybindCorner = Instance.new("UICorner")
+KeybindCorner.CornerRadius = UDim.new(0, 12)
+KeybindCorner.Parent = KeybindFrame
+
+local KeybindStroke = Instance.new("UIStroke")
+KeybindStroke.Color = Color3.fromRGB(65, 65, 65)
+KeybindStroke.Thickness = 1
+KeybindStroke.Parent = KeybindFrame
+
+--------------------------------------------------
+-- KEYBIND TITLE
+--------------------------------------------------
+
+local KeybindTitle = Instance.new("TextLabel")
+KeybindTitle.Size = UDim2.new(1, -20, 0, 35)
+KeybindTitle.Position = UDim2.new(0, 10, 0, 5)
+
+KeybindTitle.BackgroundTransparency = 1
+KeybindTitle.Text = "Keybind Settings"
+
+KeybindTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeybindTitle.Font = Enum.Font.GothamBold
+KeybindTitle.TextSize = 18
+KeybindTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+KeybindTitle.Parent = KeybindFrame
+
+--------------------------------------------------
+-- BIND BUTTON CREATOR
+--------------------------------------------------
+
+local function createBindButton(name, y)
+
+    local Button = Instance.new("TextButton")
+
+    Button.Size = UDim2.new(1, -20, 0, 42)
+    Button.Position = UDim2.new(0, 10, 0, y)
+
+    Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Button.BorderSizePixel = 0
+
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.Font = Enum.Font.GothamBold
+    Button.TextSize = 14
+
+    Button.Parent = KeybindFrame
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = Button
+
+    return Button
+end
+
+local CombatBindButton = createBindButton("Combat", 45)
+local ESPBindButton = createBindButton("ESP", 90)
+local FriendBindButton = createBindButton("Friends", 135)
+
+local ResetBindsButton = Instance.new("TextButton")
+ResetBindsButton.Size = UDim2.new(1, -20, 0, 30)
+ResetBindsButton.Position = UDim2.new(0, 10, 0, 190)
+
+ResetBindsButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+ResetBindsButton.BorderSizePixel = 0
+
+ResetBindsButton.Text = "Reset binds"
+ResetBindsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ResetBindsButton.Font = Enum.Font.GothamBold
+ResetBindsButton.TextSize = 13
+
+ResetBindsButton.Parent = KeybindFrame
+
+local ResetCorner = Instance.new("UICorner")
+ResetCorner.CornerRadius = UDim.new(0, 8)
+ResetCorner.Parent = ResetBindsButton
+
+--------------------------------------------------
+-- FORMAT KEY
+--------------------------------------------------
+
+local function getKeyName(key)
+
+    if key == Enum.KeyCode.Unknown then
+        return "None"
+    end
+
+    return key.Name
+end
+
+--------------------------------------------------
+-- UPDATE KEYBIND GUI
+--------------------------------------------------
+
+local function updateKeybindGUI()
+
+    CombatBindButton.Text =
+        "Kill Aura      [" ..
+        getKeyName(config.binds.Combat) ..
+        "]"
+
+    ESPBindButton.Text =
+        "ESP            [" ..
+        getKeyName(config.binds.ESP) ..
+        "]"
+
+    FriendBindButton.Text =
+        "Friend List    [" ..
+        getKeyName(config.binds.Friends) ..
+        "]"
+end
 
 --------------------------------------------------
 -- UPDATE MAIN GUI
@@ -161,38 +296,241 @@ local FriendButton = createButton(120)
 local function updateMainGUI()
 
     if config.combatEnabled then
-        CombatButton.Text = "Kill Aura: ON [Z]"
-        CombatButton.BackgroundColor3 = Color3.fromRGB(45, 170, 75)
+
+        CombatButton.Text =
+            "Kill Aura: ON [" ..
+            getKeyName(config.binds.Combat) ..
+            "]"
+
+        CombatButton.BackgroundColor3 =
+            Color3.fromRGB(45, 170, 75)
+
     else
-        CombatButton.Text = "Kill Aura: OFF [Z]"
-        CombatButton.BackgroundColor3 = Color3.fromRGB(170, 45, 45)
+
+        CombatButton.Text =
+            "Kill Aura: OFF [" ..
+            getKeyName(config.binds.Combat) ..
+            "]"
+
+        CombatButton.BackgroundColor3 =
+            Color3.fromRGB(170, 45, 45)
     end
 
     if config.espEnabled then
-        ESPButton.Text = "ESP: ON [X]"
-        ESPButton.BackgroundColor3 = Color3.fromRGB(45, 120, 200)
+
+        ESPButton.Text =
+            "ESP: ON [" ..
+            getKeyName(config.binds.ESP) ..
+            "]"
+
+        ESPButton.BackgroundColor3 =
+            Color3.fromRGB(45, 120, 200)
+
     else
-        ESPButton.Text = "ESP: OFF [X]"
-        ESPButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+
+        ESPButton.Text =
+            "ESP: OFF [" ..
+            getKeyName(config.binds.ESP) ..
+            "]"
+
+        ESPButton.BackgroundColor3 =
+            Color3.fromRGB(70, 70, 70)
     end
 
-    FriendButton.Text = "Friend List [F]"
+    FriendButton.Text =
+        "Friend List [" ..
+        getKeyName(config.binds.Friends) ..
+        "]"
+
+    KeybindButton.Text =
+        "Keybinds"
 end
 
+updateKeybindGUI()
 updateMainGUI()
 
 --------------------------------------------------
--- FRIEND WINDOW
+-- WAIT FOR KEY
+--------------------------------------------------
+
+local waitingForBind = nil
+
+local function startKeybind(button, bindName)
+
+    if waitingForBind then
+        return
+    end
+
+    waitingForBind = bindName
+
+    button.Text = "Press a key..."
+
+    button.BackgroundColor3 =
+        Color3.fromRGB(180, 140, 40)
+end
+
+--------------------------------------------------
+-- KEYBIND BUTTONS
+--------------------------------------------------
+
+CombatBindButton.MouseButton1Click:Connect(function()
+
+    startKeybind(
+        CombatBindButton,
+        "Combat"
+    )
+end)
+
+ESPBindButton.MouseButton1Click:Connect(function()
+
+    startKeybind(
+        ESPBindButton,
+        "ESP"
+    )
+end)
+
+FriendBindButton.MouseButton1Click:Connect(function()
+
+    startKeybind(
+        FriendBindButton,
+        "Friends"
+    )
+end)
+
+--------------------------------------------------
+-- RESET BINDS
+--------------------------------------------------
+
+ResetBindsButton.MouseButton1Click:Connect(function()
+
+    config.binds.Combat = Enum.KeyCode.Z
+    config.binds.ESP = Enum.KeyCode.X
+    config.binds.Friends = Enum.KeyCode.F
+
+    waitingForBind = nil
+
+    updateKeybindGUI()
+    updateMainGUI()
+end)
+
+--------------------------------------------------
+-- MAIN BUTTONS
+--------------------------------------------------
+
+CombatButton.MouseButton1Click:Connect(function()
+
+    config.combatEnabled =
+        not config.combatEnabled
+
+    updateMainGUI()
+end)
+
+ESPButton.MouseButton1Click:Connect(function()
+
+    config.espEnabled =
+        not config.espEnabled
+
+    updateMainGUI()
+end)
+
+FriendButton.MouseButton1Click:Connect(function()
+
+    -- Friend List window
+    -- объявляется ниже
+    if FriendFrame then
+        FriendFrame.Visible =
+            not FriendFrame.Visible
+    end
+end)
+
+KeybindButton.MouseButton1Click:Connect(function()
+
+    KeybindFrame.Visible =
+        not KeybindFrame.Visible
+end)
+
+--------------------------------------------------
+-- KEY INPUT
+--------------------------------------------------
+
+UserInputService.InputBegan:Connect(function(input, processed)
+
+    --------------------------------------------------
+    -- SETTING NEW KEY
+    --------------------------------------------------
+
+    if waitingForBind then
+
+        if input.KeyCode == Enum.KeyCode.Escape then
+
+            waitingForBind = nil
+
+            updateKeybindGUI()
+
+            return
+        end
+
+        if input.KeyCode ~= Enum.KeyCode.Unknown then
+
+            config.binds[waitingForBind] =
+                input.KeyCode
+
+            waitingForBind = nil
+
+            updateKeybindGUI()
+            updateMainGUI()
+
+            return
+        end
+    end
+
+    --------------------------------------------------
+    -- NORMAL BINDS
+    --------------------------------------------------
+
+    if processed then
+        return
+    end
+
+    if input.KeyCode == config.binds.Combat then
+
+        config.combatEnabled =
+            not config.combatEnabled
+
+        updateMainGUI()
+
+    elseif input.KeyCode == config.binds.ESP then
+
+        config.espEnabled =
+            not config.espEnabled
+
+        updateMainGUI()
+
+    elseif input.KeyCode == config.binds.Friends then
+
+        if FriendFrame then
+
+            FriendFrame.Visible =
+                not FriendFrame.Visible
+        end
+    end
+end)
+
+--------------------------------------------------
+-- FRIEND LIST
 --------------------------------------------------
 
 local FriendFrame = Instance.new("Frame")
+
 FriendFrame.Name = "FriendList"
 FriendFrame.Size = UDim2.new(0, 280, 0, 350)
 FriendFrame.Position = UDim2.new(0.5, 140, 0.12, 0)
+
 FriendFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 FriendFrame.BorderSizePixel = 0
 FriendFrame.Visible = true
 FriendFrame.Active = true
+
 FriendFrame.Parent = ScreenGui
 
 local FriendCorner = Instance.new("UICorner")
@@ -209,44 +547,81 @@ FriendStroke.Parent = FriendFrame
 --------------------------------------------------
 
 local FriendTitle = Instance.new("TextLabel")
-FriendTitle.Size = UDim2.new(1, -20, 0, 35)
-FriendTitle.Position = UDim2.new(0, 10, 0, 5)
+
+FriendTitle.Size =
+    UDim2.new(1, -20, 0, 35)
+
+FriendTitle.Position =
+    UDim2.new(0, 10, 0, 5)
+
 FriendTitle.BackgroundTransparency = 1
+
 FriendTitle.Text = "Friend List"
-FriendTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-FriendTitle.Font = Enum.Font.GothamBold
+
+FriendTitle.TextColor3 =
+    Color3.fromRGB(255, 255, 255)
+
+FriendTitle.Font =
+    Enum.Font.GothamBold
+
 FriendTitle.TextSize = 18
-FriendTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+FriendTitle.TextXAlignment =
+    Enum.TextXAlignment.Left
+
 FriendTitle.Parent = FriendFrame
 
 --------------------------------------------------
--- INFO
+-- FRIEND INFO
 --------------------------------------------------
 
 local FriendInfo = Instance.new("TextLabel")
-FriendInfo.Size = UDim2.new(1, -20, 0, 20)
-FriendInfo.Position = UDim2.new(0, 10, 0, 37)
+
+FriendInfo.Size =
+    UDim2.new(1, -20, 0, 20)
+
+FriendInfo.Position =
+    UDim2.new(0, 10, 0, 37)
+
 FriendInfo.BackgroundTransparency = 1
-FriendInfo.Text = "Green = protected"
-FriendInfo.TextColor3 = Color3.fromRGB(120, 220, 120)
-FriendInfo.Font = Enum.Font.Gotham
+
+FriendInfo.Text =
+    "Green = protected"
+
+FriendInfo.TextColor3 =
+    Color3.fromRGB(120, 220, 120)
+
+FriendInfo.Font =
+    Enum.Font.Gotham
+
 FriendInfo.TextSize = 12
-FriendInfo.TextXAlignment = Enum.TextXAlignment.Left
+
+FriendInfo.TextXAlignment =
+    Enum.TextXAlignment.Left
+
 FriendInfo.Parent = FriendFrame
 
 --------------------------------------------------
--- PLAYER SCROLL
+-- PLAYER LIST
 --------------------------------------------------
 
 local PlayerList = Instance.new("ScrollingFrame")
-PlayerList.Size = UDim2.new(1, -20, 0, 250)
-PlayerList.Position = UDim2.new(0, 10, 0, 62)
 
-PlayerList.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+PlayerList.Size =
+    UDim2.new(1, -20, 0, 250)
+
+PlayerList.Position =
+    UDim2.new(0, 10, 0, 62)
+
+PlayerList.BackgroundColor3 =
+    Color3.fromRGB(28, 28, 28)
+
 PlayerList.BorderSizePixel = 0
 
 PlayerList.ScrollBarThickness = 5
-PlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+PlayerList.CanvasSize =
+    UDim2.new(0, 0, 0, 0)
 
 PlayerList.Parent = FriendFrame
 
@@ -259,29 +634,45 @@ UIList.Padding = UDim.new(0, 4)
 UIList.SortOrder = Enum.SortOrder.Name
 UIList.Parent = PlayerList
 
-UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    PlayerList.CanvasSize = UDim2.new(
-        0,
-        0,
-        0,
-        UIList.AbsoluteContentSize.Y + 8
-    )
+UIList:GetPropertyChangedSignal(
+    "AbsoluteContentSize"
+):Connect(function()
+
+    PlayerList.CanvasSize =
+        UDim2.new(
+            0,
+            0,
+            0,
+            UIList.AbsoluteContentSize.Y + 8
+        )
 end)
 
 --------------------------------------------------
--- REFRESH BUTTON
+-- REFRESH
 --------------------------------------------------
 
 local RefreshButton = Instance.new("TextButton")
-RefreshButton.Size = UDim2.new(1, -20, 0, 30)
-RefreshButton.Position = UDim2.new(0, 10, 0, 318)
 
-RefreshButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+RefreshButton.Size =
+    UDim2.new(1, -20, 0, 30)
+
+RefreshButton.Position =
+    UDim2.new(0, 10, 0, 318)
+
+RefreshButton.BackgroundColor3 =
+    Color3.fromRGB(50, 50, 50)
+
 RefreshButton.BorderSizePixel = 0
 
-RefreshButton.Text = "Refresh Players"
-RefreshButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-RefreshButton.Font = Enum.Font.GothamBold
+RefreshButton.Text =
+    "Refresh Players"
+
+RefreshButton.TextColor3 =
+    Color3.fromRGB(255, 255, 255)
+
+RefreshButton.Font =
+    Enum.Font.GothamBold
+
 RefreshButton.TextSize = 13
 
 RefreshButton.Parent = FriendFrame
@@ -291,24 +682,28 @@ RefreshCorner.CornerRadius = UDim.new(0, 8)
 RefreshCorner.Parent = RefreshButton
 
 --------------------------------------------------
--- FRIEND CHECK BUTTON
+-- FRIEND CHECK
 --------------------------------------------------
 
 local function isFriend(player)
+
     return Friends[player.UserId] == true
 end
 
 local function toggleFriend(player)
 
     if isFriend(player) then
+
         Friends[player.UserId] = nil
+
     else
+
         Friends[player.UserId] = true
     end
 end
 
 --------------------------------------------------
--- CREATE FRIEND ENTRY
+-- FRIEND ENTRY
 --------------------------------------------------
 
 local function createFriendEntry(player)
@@ -319,9 +714,14 @@ local function createFriendEntry(player)
 
     local Row = Instance.new("Frame")
 
-    Row.Size = UDim2.new(1, -10, 0, 40)
-    Row.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
+    Row.Size =
+        UDim2.new(1, -10, 0, 40)
+
+    Row.BackgroundColor3 =
+        Color3.fromRGB(38, 38, 38)
+
     Row.BorderSizePixel = 0
+
     Row.Parent = PlayerList
 
     local RowCorner = Instance.new("UICorner")
@@ -330,30 +730,52 @@ local function createFriendEntry(player)
 
     local NameLabel = Instance.new("TextLabel")
 
-    NameLabel.Size = UDim2.new(1, -65, 1, 0)
-    NameLabel.Position = UDim2.new(0, 10, 0, 0)
+    NameLabel.Size =
+        UDim2.new(1, -65, 1, 0)
+
+    NameLabel.Position =
+        UDim2.new(0, 10, 0, 0)
 
     NameLabel.BackgroundTransparency = 1
-    NameLabel.Text = player.DisplayName .. "  @" .. player.Name
 
-    NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    NameLabel.Font = Enum.Font.Gotham
+    NameLabel.Text =
+        player.DisplayName ..
+        "  @" ..
+        player.Name
+
+    NameLabel.TextColor3 =
+        Color3.fromRGB(255, 255, 255)
+
+    NameLabel.Font =
+        Enum.Font.Gotham
+
     NameLabel.TextSize = 12
 
-    NameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    NameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    NameLabel.TextXAlignment =
+        Enum.TextXAlignment.Left
+
+    NameLabel.TextTruncate =
+        Enum.TextTruncate.AtEnd
 
     NameLabel.Parent = Row
 
     local Check = Instance.new("TextButton")
 
-    Check.Size = UDim2.new(0, 45, 0, 28)
-    Check.Position = UDim2.new(1, -53, 0.5, -14)
+    Check.Size =
+        UDim2.new(0, 45, 0, 28)
+
+    Check.Position =
+        UDim2.new(1, -53, 0.5, -14)
 
     Check.BorderSizePixel = 0
-    Check.Font = Enum.Font.GothamBold
+
+    Check.Font =
+        Enum.Font.GothamBold
+
     Check.TextSize = 13
-    Check.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    Check.TextColor3 =
+        Color3.fromRGB(255, 255, 255)
 
     Check.Parent = Row
 
@@ -364,11 +786,18 @@ local function createFriendEntry(player)
     local function updateCheck()
 
         if isFriend(player) then
+
             Check.Text = "ON"
-            Check.BackgroundColor3 = Color3.fromRGB(45, 170, 75)
+
+            Check.BackgroundColor3 =
+                Color3.fromRGB(45, 170, 75)
+
         else
+
             Check.Text = "OFF"
-            Check.BackgroundColor3 = Color3.fromRGB(170, 45, 45)
+
+            Check.BackgroundColor3 =
+                Color3.fromRGB(170, 45, 45)
         end
     end
 
@@ -388,13 +817,18 @@ end
 
 local function refreshFriendList()
 
-    for _, child in ipairs(PlayerList:GetChildren()) do
+    for _, child in ipairs(
+        PlayerList:GetChildren()
+    ) do
+
         if child:IsA("Frame") then
             child:Destroy()
         end
     end
 
-    for _, player in ipairs(Players:GetPlayers()) do
+    for _, player in ipairs(
+        Players:GetPlayers()
+    ) do
 
         if player ~= LocalPlayer then
             createFriendEntry(player)
@@ -402,139 +836,11 @@ local function refreshFriendList()
     end
 end
 
-RefreshButton.MouseButton1Click:Connect(refreshFriendList)
+RefreshButton.MouseButton1Click:Connect(
+    refreshFriendList
+)
 
 refreshFriendList()
-
---------------------------------------------------
--- FRIEND WINDOW TOGGLE
---------------------------------------------------
-
-local function toggleFriendWindow()
-    FriendFrame.Visible = not FriendFrame.Visible
-end
-
-FriendButton.MouseButton1Click:Connect(toggleFriendWindow)
-
---------------------------------------------------
--- BINDS
---------------------------------------------------
-
-UserInputService.InputBegan:Connect(function(input, processed)
-
-    if processed then
-        return
-    end
-
-    if input.KeyCode == Enum.KeyCode.Z then
-
-        config.combatEnabled =
-            not config.combatEnabled
-
-        updateMainGUI()
-
-    elseif input.KeyCode == Enum.KeyCode.X then
-
-        config.espEnabled =
-            not config.espEnabled
-
-        updateMainGUI()
-
-    elseif input.KeyCode == Enum.KeyCode.F then
-
-        toggleFriendWindow()
-    end
-end)
-
---------------------------------------------------
--- DRAG MAIN GUI
---------------------------------------------------
-
-local draggingMain = false
-local dragStartMain
-local startPosMain
-
-Main.InputBegan:Connect(function(input)
-
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-
-        draggingMain = true
-        dragStartMain = input.Position
-        startPosMain = Main.Position
-
-        input.Changed:Connect(function()
-
-            if input.UserInputState == Enum.UserInputState.End then
-                draggingMain = false
-            end
-        end)
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-
-    if not draggingMain then
-        return
-    end
-
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-
-        local delta =
-            input.Position - dragStartMain
-
-        Main.Position = UDim2.new(
-            startPosMain.X.Scale,
-            startPosMain.X.Offset + delta.X,
-            startPosMain.Y.Scale,
-            startPosMain.Y.Offset + delta.Y
-        )
-    end
-end)
-
---------------------------------------------------
--- DRAG FRIEND LIST
---------------------------------------------------
-
-local draggingFriend = false
-local dragStartFriend
-local startPosFriend
-
-FriendFrame.InputBegan:Connect(function(input)
-
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-
-        draggingFriend = true
-        dragStartFriend = input.Position
-        startPosFriend = FriendFrame.Position
-
-        input.Changed:Connect(function()
-
-            if input.UserInputState == Enum.UserInputState.End then
-                draggingFriend = false
-            end
-        end)
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-
-    if not draggingFriend then
-        return
-    end
-
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-
-        local delta =
-            input.Position - dragStartFriend
-
-        FriendFrame.Position = UDim2.new(
-            startPosFriend.X.Scale,
-            startPosFriend.X.Offset + delta.X,
-            startPosFriend.Y.Scale,
-            startPosFriend.Y.Offset + delta.Y
-        )
-    end
-end)
 
 --------------------------------------------------
 -- ESP
@@ -546,31 +852,35 @@ ESPFolder.Parent = ScreenGui
 
 local ESPObjects = {}
 
---------------------------------------------------
--- REMOVE ESP
---------------------------------------------------
-
 local function removeESP(player)
 
-    local data = ESPObjects[player]
+    local data =
+        ESPObjects[player]
 
     if not data then
         return
     end
 
-    for _, object in pairs(data) do
-
+    if data.Highlight then
         pcall(function()
-            object:Destroy()
+            data.Highlight:Destroy()
+        end)
+    end
+
+    if data.Billboard then
+        pcall(function()
+            data.Billboard:Destroy()
+        end)
+    end
+
+    if data.HealthConnection then
+        pcall(function()
+            data.HealthConnection:Disconnect()
         end)
     end
 
     ESPObjects[player] = nil
 end
-
---------------------------------------------------
--- CREATE ESP
---------------------------------------------------
 
 local function createESP(player)
 
@@ -584,7 +894,8 @@ local function createESP(player)
         return
     end
 
-    local character = player.Character
+    local character =
+        player.Character
 
     if not character then
         return
@@ -593,7 +904,12 @@ local function createESP(player)
     local humanoid =
         character:FindFirstChildOfClass("Humanoid")
 
-    if not humanoid then
+    local root =
+        character:FindFirstChild(
+            "HumanoidRootPart"
+        )
+
+    if not humanoid or not root then
         return
     end
 
@@ -601,10 +917,13 @@ local function createESP(player)
     -- HIGHLIGHT
     --------------------------------------------------
 
-    local highlight = Instance.new("Highlight")
+    local highlight =
+        Instance.new("Highlight")
 
     highlight.Name = "PlayerESP"
-    highlight.Adornee = character
+
+    highlight.Adornee =
+        character
 
     highlight.DepthMode =
         Enum.HighlightDepthMode.AlwaysOnTop
@@ -612,45 +931,52 @@ local function createESP(player)
     highlight.FillTransparency = 0.55
     highlight.OutlineTransparency = 0
 
-    --------------------------------------------------
-    -- GREEN FRIEND / RED ENEMY
-    --------------------------------------------------
-
     if isFriend(player) then
 
         highlight.FillColor =
-            Color3.fromRGB(50, 220, 80)
+            Color3.fromRGB(
+                50,
+                220,
+                80
+            )
 
         highlight.OutlineColor =
-            Color3.fromRGB(120, 255, 130)
+            Color3.fromRGB(
+                120,
+                255,
+                130
+            )
 
     else
 
         highlight.FillColor =
-            Color3.fromRGB(255, 50, 50)
+            Color3.fromRGB(
+                255,
+                50,
+                50
+            )
 
         highlight.OutlineColor =
-            Color3.fromRGB(255, 120, 120)
+            Color3.fromRGB(
+                255,
+                120,
+                120
+            )
     end
 
     highlight.Parent = ESPFolder
 
     --------------------------------------------------
-    -- HP BILLBOARD
+    -- HP
     --------------------------------------------------
-
-    local root =
-        character:FindFirstChild("HumanoidRootPart")
-
-    if not root then
-        return
-    end
 
     local Billboard =
         Instance.new("BillboardGui")
 
     Billboard.Name = "HealthESP"
-    Billboard.Adornee = root
+
+    Billboard.Adornee =
+        root
 
     Billboard.Size =
         UDim2.new(0, 180, 0, 40)
@@ -687,32 +1013,51 @@ local function createESP(player)
         end
 
         local hp =
-            math.max(0, math.floor(humanoid.Health))
+            math.max(
+                0,
+                math.floor(humanoid.Health)
+            )
 
         local maxHP =
-            math.max(1, math.floor(humanoid.MaxHealth))
+            math.max(
+                1,
+                math.floor(humanoid.MaxHealth)
+            )
 
         HPText.Text =
             string.format(
-                "%s  |  HP: %d/%d",
+                "%s | HP: %d/%d",
                 player.DisplayName,
                 hp,
                 maxHP
             )
 
         if isFriend(player) then
+
             HPText.TextColor3 =
-                Color3.fromRGB(80, 255, 100)
+                Color3.fromRGB(
+                    80,
+                    255,
+                    100
+                )
+
         else
+
             HPText.TextColor3 =
-                Color3.fromRGB(255, 80, 80)
+                Color3.fromRGB(
+                    255,
+                    80,
+                    80
+                )
         end
     end
 
     updateHP()
 
     local healthConnection =
-        humanoid.HealthChanged:Connect(updateHP)
+        humanoid.HealthChanged:Connect(
+            updateHP
+        )
 
     ESPObjects[player] = {
         Highlight = highlight,
@@ -722,12 +1067,14 @@ local function createESP(player)
 end
 
 --------------------------------------------------
--- UPDATE ALL ESP
+-- UPDATE ESP
 --------------------------------------------------
 
 local function updateAllESP()
 
-    for _, player in ipairs(Players:GetPlayers()) do
+    for _, player in ipairs(
+        Players:GetPlayers()
+    ) do
 
         if player ~= LocalPlayer then
 
@@ -750,9 +1097,8 @@ Players.PlayerAdded:Connect(function(player)
 
         task.wait(0.5)
 
-        refreshFriendList()
-
         createESP(player)
+        refreshFriendList()
     end)
 
     refreshFriendList()
@@ -767,7 +1113,9 @@ Players.PlayerRemoving:Connect(function(player)
     refreshFriendList()
 end)
 
-for _, player in ipairs(Players:GetPlayers()) do
+for _, player in ipairs(
+    Players:GetPlayers()
+) do
 
     if player ~= LocalPlayer then
 
@@ -793,7 +1141,9 @@ task.spawn(function()
     while task.wait(0.5) do
 
         if config.espEnabled then
+
             updateAllESP()
+
         else
 
             for player in pairs(ESPObjects) do
@@ -809,7 +1159,8 @@ end)
 
 local function getEquippedWeapon()
 
-    local char = LocalPlayer.Character
+    local char =
+        LocalPlayer.Character
 
     if not char then
         return nil, nil
@@ -819,7 +1170,9 @@ local function getEquippedWeapon()
         return "Mace", "Mace"
     end
 
-    for _, name in ipairs(config.standardWeapons) do
+    for _, name in ipairs(
+        config.standardWeapons
+    ) do
 
         if char:FindFirstChild(name) then
             return name, "Standard"
@@ -830,64 +1183,84 @@ local function getEquippedWeapon()
 end
 
 --------------------------------------------------
--- TARGET SEARCH
+-- TARGETS
 --------------------------------------------------
 
 local function getTargets()
 
     local targets = {}
 
-    local char = LocalPlayer.Character
+    local char =
+        LocalPlayer.Character
+
     local root =
-        char and char:FindFirstChild("HumanoidRootPart")
+        char and char:FindFirstChild(
+            "HumanoidRootPart"
+        )
 
     if not root then
         return targets
     end
 
-    for _, obj in ipairs(Workspace:GetChildren()) do
+    for _, obj in ipairs(
+        Workspace:GetChildren()
+    ) do
 
-        if obj:IsA("Model") and obj ~= char then
+        if obj:IsA("Model")
+            and obj ~= char then
 
             local humanoid =
                 obj:FindFirstChild("Humanoid")
 
             local hitbox =
-                obj:FindFirstChild("PlayerHitbox")
+                obj:FindFirstChild(
+                    "PlayerHitbox"
+                )
 
-            if humanoid and hitbox then
+            if humanoid
+                and hitbox
+                and humanoid.Health > 0 then
 
-                if humanoid.Health > 0 then
+                local distance =
+                    (
+                        root.Position -
+                        hitbox.Position
+                    ).Magnitude
 
-                    local distance =
-                        (root.Position - hitbox.Position).Magnitude
+                if distance <= config.range then
 
-                    if distance <= config.range then
+                    local player =
+                        Players:GetPlayerFromCharacter(
+                            obj
+                        )
 
-                        local player =
-                            Players:GetPlayerFromCharacter(obj)
+                    -- FRIENDS ARE IGNORED
+                    if not player
+                        or not Friends[player.UserId] then
 
-                        -- FRIENDS ARE ALWAYS IGNORED
-                        if not player
-                            or not Friends[player.UserId] then
-
-                            table.insert(targets, {
+                        table.insert(
+                            targets,
+                            {
                                 Model = obj,
                                 Player = player,
                                 Humanoid = humanoid,
                                 Hitbox = hitbox,
                                 Distance = distance
-                            })
-                        end
+                            }
+                        )
                     end
                 end
             end
         end
     end
 
-    table.sort(targets, function(a, b)
-        return a.Distance < b.Distance
-    end)
+    table.sort(
+        targets,
+        function(a, b)
+            return a.Distance <
+                b.Distance
+        end
+    )
 
     return targets
 end
@@ -900,11 +1273,15 @@ local lastAttack = {}
 
 local function canAttack(target)
 
-    local now = os.clock()
-    local previous = lastAttack[target]
+    local now =
+        os.clock()
+
+    local previous =
+        lastAttack[target]
 
     if not previous
-        or now - previous >= config.targetCooldown then
+        or now - previous >=
+            config.targetCooldown then
 
         lastAttack[target] = now
 
@@ -956,7 +1333,9 @@ local function attackTarget(
     end
 
     local root =
-        char:FindFirstChild("HumanoidRootPart")
+        char:FindFirstChild(
+            "HumanoidRootPart"
+        )
 
     if not root then
         return
@@ -992,15 +1371,30 @@ local function attackTarget(
                 1,
                 "Mace",
                 {
-                    SmashMissTipPosition = targetPos,
-                    SmashMissRayOrigin = originPos,
+                    SmashMissTipPosition =
+                        targetPos,
+
+                    SmashMissRayOrigin =
+                        originPos,
+
                     FallSpeed = 600,
-                    AimDirection = aimDir,
-                    ClientMaceSmashHitPosition = targetPos,
-                    SourceCharacter = char,
+
+                    AimDirection =
+                        aimDir,
+
+                    ClientMaceSmashHitPosition =
+                        targetPos,
+
+                    SourceCharacter =
+                        char,
+
                     FallDistance = 800,
-                    SmashAttemptId = attemptId,
-                    ClientMaceSmashHurtbox = true
+
+                    SmashAttemptId =
+                        attemptId,
+
+                    ClientMaceSmashHurtbox =
+                        true
                 }
             )
 
@@ -1012,7 +1406,9 @@ local function attackTarget(
                 1,
                 weaponName,
                 {
-                    SourceCharacter = char,
+                    SourceCharacter =
+                        char,
+
                     IsFalling = true
                 }
             )
@@ -1057,16 +1453,73 @@ task.spawn(function()
 end)
 
 --------------------------------------------------
--- CHARACTER RESPAWN
+-- DRAG WINDOWS
 --------------------------------------------------
 
-LocalPlayer.CharacterAdded:Connect(function()
+local function makeDraggable(frame)
 
-    task.wait(1)
+    local dragging = false
+    local dragStart
+    local startPos
 
-    updateMainGUI()
-    updateAllESP()
-end)
+    frame.InputBegan:Connect(function(input)
+
+        if input.UserInputType ==
+            Enum.UserInputType.MouseButton1 then
+
+            dragging = true
+
+            dragStart =
+                input.Position
+
+            startPos =
+                frame.Position
+
+            input.Changed:Connect(
+                function()
+
+                    if input.UserInputState ==
+                        Enum.UserInputState.End then
+
+                        dragging = false
+                    end
+                end
+            )
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(
+        function(input)
+
+            if not dragging then
+                return
+            end
+
+            if input.UserInputType ==
+                Enum.UserInputType.MouseMovement then
+
+                local delta =
+                    input.Position -
+                    dragStart
+
+                frame.Position =
+                    UDim2.new(
+                        startPos.X.Scale,
+                        startPos.X.Offset +
+                            delta.X,
+
+                        startPos.Y.Scale,
+                        startPos.Y.Offset +
+                            delta.Y
+                    )
+            end
+        end
+    )
+end
+
+makeDraggable(Main)
+makeDraggable(FriendFrame)
+makeDraggable(KeybindFrame)
 
 --------------------------------------------------
 -- START
@@ -1074,7 +1527,5 @@ end)
 
 print("==============================")
 print("Combat + ESP loaded")
-print("Z = Kill Aura")
-print("X = ESP")
-print("F = Friend List")
+print("Custom keybinds enabled")
 print("==============================")
